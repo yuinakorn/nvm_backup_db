@@ -40,6 +40,9 @@ fs.readFile(table_list, 'utf8', function (err, data) {
             let log = datetime + ' mysql dump error' + "\r\n";
             fs.appendFile(backup_dir + '/log.txt', log, function (err) {
                     if (err) throw err;
+                // break app
+                process.exit(1);
+
                 }
             );
         }
