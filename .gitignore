@@ -1,5 +1,6 @@
 .idea
 backup/*.sql
+backup/*.gz
 backup/log.txt
 .env
 node_modules
