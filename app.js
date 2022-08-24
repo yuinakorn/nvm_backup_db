@@ -51,7 +51,7 @@ function compress(backup_file) {
         }
         console.log('backup && compress success');
         //    write log file
-        let log = 'backup success at ' + datetime + '\n';
+        let log = 'backup success at ' + datetime + "\r\n";
         fs.appendFile(backup_dir + '/log.txt', log, function (err) {
                 if (err) throw err;
                 console.log('log saved');
