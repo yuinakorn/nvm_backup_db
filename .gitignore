@@ -1,0 +1,8 @@
+.idea
+backup/*.sql
+backup/log.txt
+.env
+node_modules
+*.iml
+package-lock.json
+
