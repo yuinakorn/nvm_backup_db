@@ -93,3 +93,4 @@ function write_log() {
         }
     );
 }
+
