@@ -170,7 +170,6 @@ tmp_admission
 tmp_anc
 tmp_anc_60
 tmp_anc_itemize
-tmp_anc_qof
 tmp_bp
 tmp_breast_screen
 tmp_breast_screen_doctor
