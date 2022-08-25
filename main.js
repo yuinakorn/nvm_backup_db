@@ -49,44 +49,47 @@ cron.schedule(CRON_TIME, function () {
         }
     });
 
+
+
+    function compress(backup_file) {
+        let cmd = 'gzip --force ' + backup_file;
+        if (shell.exec(cmd).code !== 0) {
+            console.log('exec error: ' + error);
+        } else {
+            datetime = moment().format('YYYY-MM-DD HH:mm:ss');
+            message = 'compress completed';
+            write_log(message);
+            let backup_file_gz = DB_NAME + '.sql.gz';
+            upload(backup_file_gz);
+        }
+    }
+
+
+    function upload(backup_file_gz) {
+        let cmd = 'sshpass -p \"' + ROMOTE_PASSWORD + '\" scp -P ' + SSH_PORT + ' ' + backup_dir + '/' + backup_file_gz
+            + ' ' + REMOTE_USER + ':/var/backup/';
+        if (shell.exec(cmd).code !== 0) {
+            console.log('exec error: ' + error);
+            message = 'exec error: ' + error;
+            write_log(message);
+        } else {
+            datetime = moment().format('YYYY-MM-DD HH:mm:ss');
+            console.log('[2/2] ' + datetime + ' end process upload done!');
+            message = 'end process upload done!';
+            write_log(message);
+        }
+    }
+
+
+    function write_log(message) {
+        datetime = moment().format('YYYY-MM-DD HH:mm:ss');
+        let log = datetime + ' ' + message + "\r\n";
+        fs.appendFile(backup_dir + '/log.txt', log, function (err) {
+                if (err) throw err;
+            }
+        );
+    }
+
+
 });
 
-
-function compress(backup_file) {
-    let cmd = 'gzip --force ' + backup_file;
-    if (shell.exec(cmd).code !== 0) {
-        console.log('exec error: ' + error);
-    } else {
-        datetime = moment().format('YYYY-MM-DD HH:mm:ss');
-        message = 'compress completed';
-        write_log(message);
-        let backup_file_gz = DB_NAME + '.sql.gz';
-        upload(backup_file_gz);
-    }
-}
-
-
-function upload(backup_file_gz) {
-    let cmd = 'sshpass -p \"' + ROMOTE_PASSWORD + '\" scp -P ' + SSH_PORT + ' ' + backup_dir + '/' + backup_file_gz
-        + ' ' + REMOTE_USER + ':/var/backup/';
-    if (shell.exec(cmd).code !== 0) {
-        console.log('exec error: ' + error);
-        message = 'exec error: ' + error;
-        write_log(message);
-    } else {
-        datetime = moment().format('YYYY-MM-DD HH:mm:ss');
-        console.log('[2/2] ' + datetime + ' end process upload done!');
-        message = 'end process upload done!';
-        write_log(message);
-    }
-}
-
-
-function write_log(message) {
-    datetime = moment().format('YYYY-MM-DD HH:mm:ss');
-    let log = datetime + ' ' + message + "\r\n";
-    fs.appendFile(backup_dir + '/log.txt', log, function (err) {
-            if (err) throw err;
-        }
-    );
-}
