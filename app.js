@@ -1,4 +1,3 @@
-#!/usr/bin/node
 const dotenv = require('dotenv');
 const moment = require('moment');
 const fs = require("fs");
