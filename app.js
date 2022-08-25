@@ -16,11 +16,14 @@ const REMOTE_USER = process.env.REMOTE_USER;
 
 const CUR_DIR = process.cwd();
 let datetime = moment().format('YYYY-MM-DD HH:mm:ss');
+let message = '';
 
 const backup_dir = CUR_DIR + '/backup';
 const table_list = CUR_DIR + '/tablelist.txt';
 
 console.log('[1/5] ' + datetime + ' start processing');
+message = 'start process';
+write_log(message);
 
 fs.readFile(table_list, 'utf8', function (err, data) {
     if (err) throw err;
@@ -37,16 +40,12 @@ fs.readFile(table_list, 'utf8', function (err, data) {
     exec(cmd, function (error) {
         if (error !== null) {
             console.log('exec error: ' + error);
-            let log = datetime + ' mysql dump error' + "\r\n";
-            fs.appendFile(backup_dir + '/log.txt', log, function (err) {
-                    if (err) throw err;
-                // break app
-                process.exit(1);
-
-                }
-            );
+            message = 'exec error: ' + error;
+            write_log(message);
+            process.exit(1);
+        } else {
+            compress(backup_file);
         }
-        compress(backup_file);
     });
 
 });
@@ -60,7 +59,8 @@ function compress(backup_file) {
         datetime = moment().format('YYYY-MM-DD HH:mm:ss');
         console.log('[2/5] ' + datetime + ' backup && compress completed');
         console.log('[3/5] ' + datetime + ' log saved');
-        write_log();
+        message = 'mysqldump && compress completed';
+        write_log(message);
         let backup_file_gz = DB_NAME + '.sql.gz';
         upload(backup_file_gz);
 
@@ -80,6 +80,8 @@ function upload(backup_file_gz) {
             } else {
                 datetime = moment().format('YYYY-MM-DD HH:mm:ss');
                 console.log('[5/5] ' + datetime + ' upload completed');
+                message = 'end process upload completed';
+                write_log(message);
             }
 
         }
@@ -87,10 +89,10 @@ function upload(backup_file_gz) {
 }
 
 // write log
-function write_log() {
+function write_log(message) {
     //    write log file
     datetime = moment().format('YYYY-MM-DD HH:mm:ss');
-    let log = datetime + ' backup completed' + "\r\n";
+    let log = datetime + ' '+ message + "\r\n";
     fs.appendFile(backup_dir + '/log.txt', log, function (err) {
             if (err) throw err;
         }
