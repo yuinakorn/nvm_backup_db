@@ -80,7 +80,6 @@ cron.schedule(CRON_TIME, function () {
         }
     }
 
-
     function write_log(message) {
         datetime = moment().format('YYYY-MM-DD HH:mm:ss');
         let log = datetime + ' ' + message + "\r\n";
@@ -89,7 +88,6 @@ cron.schedule(CRON_TIME, function () {
             }
         );
     }
-
 
 });
 
