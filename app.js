@@ -3,6 +3,7 @@ const moment = require('moment');
 const fs = require("fs");
 const exec = require('child_process').exec;
 
+
 // load env
 dotenv.config();
 // get env
@@ -91,7 +92,7 @@ function upload(backup_file_gz) {
 function write_log(message) {
     //    write log file
     datetime = moment().format('YYYY-MM-DD HH:mm:ss');
-    let log = datetime + ' '+ message + "\r\n";
+    let log = datetime + ' ' + message + "\r\n";
     fs.appendFile(backup_dir + '/log.txt', log, function (err) {
             if (err) throw err;
         }
