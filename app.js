@@ -79,7 +79,7 @@ async function call_notsame() {
     await insert_log(msg);
 
     datetime = moment().format('YYYY-MM-DD HH:mm:ss');
-    console.log(datetime + ' 1_start processing');
+    // console.log(datetime + ' 1_start processing');
 
 
     fs.readFile(table_list, 'utf8', async function (error, data) {
@@ -98,7 +98,7 @@ async function call_notsame() {
             console.log('exec error: ' + error);
         } else {
             let datetime = moment().format('YYYY-MM-DD HH:mm:ss');
-            console.log(datetime + ' 2_mysqldump completed');
+            // console.log(datetime + ' 2_mysqldump completed');
             await insert_log("2_mysqldump_completed");
             await compress(backup_file);
         }
@@ -112,7 +112,7 @@ async function compress(backup_file) {
         console.log('exec error: ' + error);
     } else {
         datetime = moment().format('YYYY-MM-DD HH:mm:ss');
-        console.log(datetime + ' 3_zip completed');
+        // console.log(datetime + ' 3_zip completed');
         await insert_log("3_zip_completed");
         let backup_file_gz = DB_NAME + '.sql.gz';
         await upload(backup_file_gz);
@@ -126,16 +126,37 @@ async function upload(backup_file_gz) {
         console.log('exec error: ' + error);
     } else {
         datetime = moment().format('YYYY-MM-DD HH:mm:ss');
-        console.log(datetime + ' 4_end process upload done!');
+        // console.log(datetime + ' 4_end process upload done!');
         await insert_log("4_end_process");
     }
 }
 
+
+function check_status() {
+    return new Promise(resolve => {
+        let sql = "select left(process_name,1) as p_name  from hdc.hdc_log_cm where left(process_name,1) = '6'  order by process_date desc limit 1;";
+        connection.ser73.query(sql, (err, result) => {
+            if (err) throw err;
+
+            if (result.length > 0) {
+                resolve(result[0].p_name);
+                return result[0].p_name;
+            } else {
+                resolve('6');
+                return '6';
+            }
+        });
+    });
+}
+
+
 async function main() {
-    let result_of_compare = await compare_date();
+    const result_of_compare = await compare_date();
+    let result_check_status = await check_status();
+    const status_int = parseInt(result_check_status);
     if (result_of_compare) {
         callsame();
-    } else {
+    } else if (result_of_compare === false && status_int === 6) {
         call_notsame();
     }
 }
