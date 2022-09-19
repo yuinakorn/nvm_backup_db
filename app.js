@@ -1,91 +1,148 @@
+const cron = require('node-cron');
+const shell = require('shelljs');
 const dotenv = require('dotenv');
 const moment = require('moment');
 const fs = require("fs");
-const shell = require("shelljs");
-const exec = require('child_process').exec;
+const mysql = require('mysql');
 
+const connection = require('./database.js');
 
-// load env
 dotenv.config();
-// get env
+
 const DB_HOST = process.env.DB_HOST
 const DB_NAME = process.env.DB_NAME
 const DB_USER_PASSWORD = process.env.DB_USER_PASSWORD;
 const ROMOTE_PASSWORD = process.env.ROMOTE_PASSWORD;
 const SSH_PORT = process.env.SSH_PORT;
 const REMOTE_USER = process.env.REMOTE_USER;
-
 const CUR_DIR = process.cwd();
+const backup_dir = CUR_DIR + '/backup';
+const table_list = CUR_DIR + '/tablelist.txt';
+const CRON_TIME = process.env.CRON_TIME;
+
 let datetime = moment().format('YYYY-MM-DD HH:mm:ss');
 let message = '';
 
-const backup_dir = CUR_DIR + '/backup';
-const table_list = CUR_DIR + '/tablelist.txt';
+
+// cron.schedule(CRON_TIME, () => {
+//     let result_of_compare = compare_date();
+//     console.log("this top "+result_of_compare);
+// });
+
+function hdc_time() {
+    return new Promise(resolve => {
+        let sql = "SELECT p_date FROM hdc_log WHERE p_name = 'end_process' ORDER BY p_date DESC LIMIT 1";
+        connection.hdc.query(sql, (err, result) => {
+            if (err) throw err;
+            resolve(result[0].p_date);
+            return result[0].p_date;
+        });
+    });
+}
+
+function serv73_time() {
+    return new Promise(resolve => {
+        let sql = "SELECT p_date FROM hdc_log WHERE p_name = 'end_process' ORDER BY p_date DESC LIMIT 1";
+        connection.ser73.query(sql, (err, result) => {
+            if (err) throw err;
+            resolve(result[0].p_date);
+            return result[0].p_date;
+        });
+    });
+}
+
+async function compare_date() {
+
+    let result = await hdc_time();
+    let date1 = result.getTime()
+    console.log(date1);
+    const result2 = await serv73_time();
+    let date2 = result2.getTime()
+    console.log(date2);
+
+    return date1 === date2;
+}
+
+function insert_log(msg) {
+    return new Promise(resolve => {
+        let sql = "INSERT INTO `hdc_log_cm` (`server_name`, `process_name`, `process_date`) VALUES (?, ?, ?);";
+        let values = ['150', msg, datetime];
+        connection.ser73.query(sql, values, (err, result) => {
+            if (err) throw err;
+            resolve(result);
+            console.log(`record ${msg}`);
+        });
+    });
+}
+
+function callsame() {
+    console.log("same");
+}
+
+async function call_notsame() {
+    console.log("not same");
+    let msg = "1_start_process";
+    await insert_log(msg);
+    // console.log(res);
+
+    datetime = moment().format('YYYY-MM-DD HH:mm:ss');
+    console.log(datetime + ' 1_start processing');
 
 
-console.log('[1/2] ' + datetime + ' start processing');
-message = 'start process';
-write_log(message);
+    fs.readFile(table_list, 'utf8', async function (error, data) {
+        if (error) throw error;
+        let tbl = '';
+        for (let i in data.split('\n')) {
+            let table = data.split('\n')[i];
+            tbl += ' ' + table;
+        }
+        let cmd = 'mysqldump -h ' + DB_HOST + ' -u root -p' + DB_USER_PASSWORD + ' --databases ' + DB_NAME + ' --tables '
+            + tbl + ' > ' + backup_dir + '/' + DB_NAME + '.sql';
 
-fs.readFile(table_list, 'utf8', function (err, data) {
-    if (err) throw err;
-    let tbl = '';
-    for (let i in data.split('\n')) {
-        let table = data.split('\n')[i];
-        tbl += ' ' + table;
-    }
-    let cmd = 'mysqldump -h ' + DB_HOST + ' -u root -p' + DB_USER_PASSWORD + ' --databases ' + DB_NAME + ' --tables '
-        + tbl + ' > ' + backup_dir + '/' + DB_NAME + '.sql';
+        let backup_file = backup_dir + '/' + DB_NAME + '.sql';
 
-    let backup_file = backup_dir + '/' + DB_NAME + '.sql';
+        if (shell.exec(cmd).code !== 0) {
+            console.log('exec error: ' + error);
+        } else {
+            let datetime = moment().format('YYYY-MM-DD HH:mm:ss');
+            console.log(datetime + ' 2_mysqldump completed');
+            await insert_log("2_mysqldump_completed");
+            await compress(backup_file);
+        }
+    });
+    connection.hdc.end();
+}
 
-    if (shell.exec(cmd).code !== 0) {
-        console.log('exec error: ' + error);
-        message = 'exec error: ' + error;
-        write_log(message);
-    } else {
-        message = 'mysqldump completed';
-        write_log(message);
-        compress(backup_file);
-    }
-});
-
-
-
-function compress(backup_file) {
+async function compress(backup_file) {
     let cmd = 'gzip --force ' + backup_file;
     if (shell.exec(cmd).code !== 0) {
         console.log('exec error: ' + error);
     } else {
         datetime = moment().format('YYYY-MM-DD HH:mm:ss');
-        message = 'compress completed';
-        write_log(message);
+        console.log(datetime + ' 3_zip completed');
+        await insert_log("3_zip_completed");
         let backup_file_gz = DB_NAME + '.sql.gz';
-        upload(backup_file_gz);
+        await upload(backup_file_gz);
     }
 }
 
-
-function upload(backup_file_gz) {
+async function upload(backup_file_gz) {
     let cmd = 'sshpass -p \"' + ROMOTE_PASSWORD + '\" scp -P ' + SSH_PORT + ' ' + backup_dir + '/' + backup_file_gz
         + ' ' + REMOTE_USER + ':/var/backup/';
     if (shell.exec(cmd).code !== 0) {
         console.log('exec error: ' + error);
-        message = 'exec error: ' + error;
-        write_log(message);
     } else {
         datetime = moment().format('YYYY-MM-DD HH:mm:ss');
-        console.log('[2/2] ' + datetime + ' end process upload done!');
-        message = 'end process upload done!';
-        write_log(message);
+        console.log(datetime + ' 4_end process upload done!');
+        await insert_log("4_end_process");
     }
 }
 
-function write_log(message) {
-    datetime = moment().format('YYYY-MM-DD HH:mm:ss');
-    let log = datetime + ' ' + message + "\r\n";
-    fs.appendFile(backup_dir + '/log.txt', log, function (err) {
-            if (err) throw err;
-        }
-    );
-}
+compare_date().then((result) => {
+    console.log(result);
+    if (result) {
+        callsame();
+    } else {
+        call_notsame();
+    }
+});
