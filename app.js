@@ -165,14 +165,3 @@ cron.schedule(CRON_TIME, () => {
     main();
 });
 
-
-// cron.schedule(CRON_TIME, () => {
-//     compare_date().then((result) => {
-//         console.log(result);
-//         if (result) {
-//             callsame();
-//         } else {
-//             call_notsame();
-//         }
-//     });
-// });
