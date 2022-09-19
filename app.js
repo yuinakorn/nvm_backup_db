@@ -21,13 +21,7 @@ const table_list = CUR_DIR + '/tablelist.txt';
 const CRON_TIME = process.env.CRON_TIME;
 
 let datetime = moment().format('YYYY-MM-DD HH:mm:ss');
-let message = '';
 
-
-// cron.schedule(CRON_TIME, () => {
-//     let result_of_compare = compare_date();
-//     console.log("this top "+result_of_compare);
-// });
 
 function hdc_time() {
     return new Promise(resolve => {
@@ -83,7 +77,6 @@ async function call_notsame() {
     console.log("not same");
     let msg = "1_start_process";
     await insert_log(msg);
-    // console.log(res);
 
     datetime = moment().format('YYYY-MM-DD HH:mm:ss');
     console.log(datetime + ' 1_start processing');
@@ -138,11 +131,27 @@ async function upload(backup_file_gz) {
     }
 }
 
-compare_date().then((result) => {
-    console.log(result);
-    if (result) {
+async function main() {
+    let result_of_compare = await compare_date();
+    if (result_of_compare) {
         callsame();
     } else {
         call_notsame();
     }
+}
+
+cron.schedule(CRON_TIME, () => {
+    main();
 });
+
+
+// cron.schedule(CRON_TIME, () => {
+//     compare_date().then((result) => {
+//         console.log(result);
+//         if (result) {
+//             callsame();
+//         } else {
+//             call_notsame();
+//         }
+//     });
+// });
