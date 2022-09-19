@@ -15,5 +15,7 @@ pm2 start app.js
 ```
 
 
+- create database.js file in root folder
+
 
 
