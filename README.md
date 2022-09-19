@@ -2,5 +2,15 @@
 
 nodejs version 10.x
 
-use main.js
+## Install
+
+```nodjs
+npm install
+```
+
+## Start
+
+```pm2
+pm2 start app.js
+```
 
