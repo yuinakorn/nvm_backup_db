@@ -1,6 +1,7 @@
 const dotenv = require('dotenv');
 const moment = require('moment');
 const fs = require("fs");
+const shell = require("shelljs");
 const exec = require('child_process').exec;
 
 
@@ -21,7 +22,8 @@ let message = '';
 const backup_dir = CUR_DIR + '/backup';
 const table_list = CUR_DIR + '/tablelist.txt';
 
-console.log('[1/5] ' + datetime + ' start processing');
+
+console.log('[1/2] ' + datetime + ' start processing');
 message = 'start process';
 write_log(message);
 
@@ -37,60 +39,49 @@ fs.readFile(table_list, 'utf8', function (err, data) {
 
     let backup_file = backup_dir + '/' + DB_NAME + '.sql';
 
-    exec(cmd, function (error) {
-        if (error !== null) {
-            console.log('exec error: ' + error);
-            message = 'exec error: ' + error;
-            write_log(message);
-            process.exit(1);
-        } else {
-            compress(backup_file);
-        }
-    });
-
+    if (shell.exec(cmd).code !== 0) {
+        console.log('exec error: ' + error);
+        message = 'exec error: ' + error;
+        write_log(message);
+    } else {
+        message = 'mysqldump completed';
+        write_log(message);
+        compress(backup_file);
+    }
 });
+
+
 
 function compress(backup_file) {
     let cmd = 'gzip --force ' + backup_file;
-    exec(cmd, async function (error) {
-        if (error !== null) {
-            console.log('exec error: ' + error);
-        }
+    if (shell.exec(cmd).code !== 0) {
+        console.log('exec error: ' + error);
+    } else {
         datetime = moment().format('YYYY-MM-DD HH:mm:ss');
-        console.log('[2/5] ' + datetime + ' backup && compress completed');
-        console.log('[3/5] ' + datetime + ' log saved');
-        message = 'mysqldump && compress completed';
+        message = 'compress completed';
         write_log(message);
         let backup_file_gz = DB_NAME + '.sql.gz';
         upload(backup_file_gz);
-
-    });
+    }
 }
 
-// upload to server
+
 function upload(backup_file_gz) {
     let cmd = 'sshpass -p \"' + ROMOTE_PASSWORD + '\" scp -P ' + SSH_PORT + ' ' + backup_dir + '/' + backup_file_gz
         + ' ' + REMOTE_USER + ':/var/backup/';
-    datetime = moment().format('YYYY-MM-DD HH:mm:ss');
-    console.log('[4/5] ' + datetime + ' start upload');
-
-    exec(cmd, function (error) {
-            if (error !== null) {
-                console.log('exec error: ' + error);
-            } else {
-                datetime = moment().format('YYYY-MM-DD HH:mm:ss');
-                console.log('[5/5] ' + datetime + ' upload completed');
-                message = 'end process upload completed';
-                write_log(message);
-            }
-
-        }
-    );
+    if (shell.exec(cmd).code !== 0) {
+        console.log('exec error: ' + error);
+        message = 'exec error: ' + error;
+        write_log(message);
+    } else {
+        datetime = moment().format('YYYY-MM-DD HH:mm:ss');
+        console.log('[2/2] ' + datetime + ' end process upload done!');
+        message = 'end process upload done!';
+        write_log(message);
+    }
 }
 
-// write log
 function write_log(message) {
-    //    write log file
     datetime = moment().format('YYYY-MM-DD HH:mm:ss');
     let log = datetime + ' ' + message + "\r\n";
     fs.appendFile(backup_dir + '/log.txt', log, function (err) {
@@ -98,4 +89,3 @@ function write_log(message) {
         }
     );
 }
-

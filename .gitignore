@@ -6,4 +6,5 @@ backup/log.txt
 node_modules
 *.iml
 package-lock.json
+database.js
 
