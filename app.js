@@ -91,7 +91,7 @@ async function call_notsame() {
             let table = data.split('\n')[i];
             tbl += ' ' + table;
         }
-        let cmd = 'mysqldump -h ' + DB_HOST + ' -u root -p' + DB_USER_PASSWORD + ' --databases ' + DB_NAME + ' --tables '
+        let cmd = 'mysqldump -h ' + DB_HOST + ' -u root -p' + DB_USER_PASSWORD + ' -f --databases ' + DB_NAME + ' --tables '
             + tbl + ' > ' + backup_dir + '/' + DB_NAME + '.sql';
 
         let backup_file = backup_dir + '/' + DB_NAME + '.sql';
