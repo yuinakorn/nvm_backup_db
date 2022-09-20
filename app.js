@@ -77,7 +77,7 @@ function callsame() {
 
 async function call_notsame() {
     console.log("not same");
-    let msg = "1_start_process";
+    let msg = "1_start_process_dumping";
     await insert_log(msg);
 
     datetime = moment().format('YYYY-MM-DD HH:mm:ss');
@@ -162,8 +162,10 @@ async function main() {
     } else if (result_of_compare === false && status_int === 6) {
         console.log(status_int);
         call_notsame();
+    } else if (result_of_compare === false && status_int !== 6) {
+        console.log(`process is running (${status_int})`);
     } else {
-        console.log('process is running');
+        console.log('error');
     }
 }
 
