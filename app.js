@@ -169,6 +169,6 @@ async function main() {
     }
 }
 
-// cron.schedule(CRON_TIME, () => {
+cron.schedule(CRON_TIME, () => {
     main();
-// });
+});
