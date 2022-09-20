@@ -123,7 +123,7 @@ async function compress(backup_file) {
 
 async function upload(backup_file_gz) {
     let cmd = 'sshpass -p \"' + ROMOTE_PASSWORD + '\" scp -P ' + SSH_PORT + ' ' + backup_dir + '/' + backup_file_gz
-        + ' ' + REMOTE_USER + ':/var/backup/test/';
+        + ' ' + REMOTE_USER + ':/var/backup/';
     if (shell.exec(cmd).code !== 0) {
         console.log('exec error: ' + error);
     } else {
