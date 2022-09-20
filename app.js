@@ -137,7 +137,7 @@ async function upload(backup_file_gz) {
 
 function check_status() {
     return new Promise(resolve => {
-        let sql = "select left(process_name,1) as p_name  from hdc_log_cm where left(process_name,1) = '6'  order by process_date desc limit 1;";
+        let sql = "select left(process_name,1) as p_name  from hdc_log_cm order by process_date desc limit 1";
         connection.ser73.query(sql, (err, result) => {
             if (err) throw err;
 
@@ -170,4 +170,3 @@ async function main() {
 cron.schedule(CRON_TIME, () => {
     main();
 });
-
