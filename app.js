@@ -21,6 +21,7 @@ const table_list = CUR_DIR + '/tablelist.txt';
 const CRON_TIME = process.env.CRON_TIME;
 
 let datetime = moment().format('YYYY-MM-DD HH:mm:ss');
+let server_name = '150';
 
 
 function hdc_time() {
@@ -49,18 +50,19 @@ async function compare_date() {
 
     let result = await hdc_time();
     let date1 = result.getTime()
-    console.log(date1);
+    // console.log(date1);
     const result2 = await serv73_time();
     let date2 = result2.getTime()
-    console.log(date2);
+    // console.log(date2);
 
     return date1 === date2;
 }
 
 function insert_log(msg) {
     return new Promise(resolve => {
-        let sql = "INSERT INTO `hdc_log_cm` (`server_name`, `process_name`, `process_date`) VALUES (?, ?, ?);";
-        let values = ['150', msg, datetime];
+        let sql = "INSERT INTO hdc_log_cm (server_name, process_name, process_date) VALUES (?, ?, ?);";
+        let values = [server_name, msg, datetime];
+
         connection.ser73.query(sql, values, (err, result) => {
             if (err) throw err;
             resolve(result);
@@ -121,20 +123,21 @@ async function compress(backup_file) {
 
 async function upload(backup_file_gz) {
     let cmd = 'sshpass -p \"' + ROMOTE_PASSWORD + '\" scp -P ' + SSH_PORT + ' ' + backup_dir + '/' + backup_file_gz
-        + ' ' + REMOTE_USER + ':/var/backup/';
+        + ' ' + REMOTE_USER + ':/var/backup/test/';
     if (shell.exec(cmd).code !== 0) {
         console.log('exec error: ' + error);
     } else {
         datetime = moment().format('YYYY-MM-DD HH:mm:ss');
         // console.log(datetime + ' 4_end process upload done!');
         await insert_log("4_end_process");
+        process.exit(0);
     }
 }
 
 
 function check_status() {
     return new Promise(resolve => {
-        let sql = "select left(process_name,1) as p_name  from hdc.hdc_log_cm where left(process_name,1) = '6'  order by process_date desc limit 1;";
+        let sql = "select left(process_name,1) as p_name  from hdc_log_cm where left(process_name,1) = '6'  order by process_date desc limit 1;";
         connection.ser73.query(sql, (err, result) => {
             if (err) throw err;
 
@@ -157,11 +160,14 @@ async function main() {
     if (result_of_compare) {
         callsame();
     } else if (result_of_compare === false && status_int === 6) {
+        console.log(status_int);
         call_notsame();
+    } else {
+        console.log('process is running');
     }
 }
 
-cron.schedule(CRON_TIME, () => {
+// cron.schedule(CRON_TIME, () => {
     main();
-});
+// });
 
