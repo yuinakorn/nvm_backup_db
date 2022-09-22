@@ -24,6 +24,23 @@ let datetime = moment().format('YYYY-MM-DD HH:mm:ss');
 let server_name = '150';
 
 
+// hdc
+const connect_hdc = mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_USER_PASSWORD,
+    database: process.env.DB_NAME
+});
+
+// server 73
+const connect_ser73 = mysql.createConnection({
+    host: process.env.REMOTE_HOST,
+    user: process.env.REMOTE_DB_USER,
+    password: 'admin@1234@cmpho',
+    database: 'hdc'
+});
+
+
 function hdc_time() {
     return new Promise(resolve => {
         let sql = "SELECT p_date FROM hdc_log WHERE p_name = 'end_process' ORDER BY p_date DESC LIMIT 1";
@@ -104,8 +121,8 @@ async function call_notsame() {
             await insert_log("2_mysqldump_completed");
             await compress(backup_file);
         }
+
     });
-    connection.hdc.end();
 }
 
 async function compress(backup_file) {
